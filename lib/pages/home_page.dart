@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gemini_api/bloc/chat_bloc.dart';
 import 'package:gemini_api/models/chat_message_model.dart';
 import 'package:lottie/lottie.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:avatar_glow/avatar_glow.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ChatBloc chatBloc = ChatBloc();
   TextEditingController textEditingController = TextEditingController();
+  stt.SpeechToText _speech = stt.SpeechToText();
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +35,7 @@ class _HomePageState extends State<HomePage> {
                 decoration: const BoxDecoration(
                   image: DecorationImage(
                     opacity: 0.3,
-                    image: AssetImage("assets/images/space.jpg"),
+                    image: AssetImage("assets/images/background.jpg"),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -46,8 +49,8 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            "Space pod",
+                          const Text(
+                            "Abood",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 24,
@@ -55,30 +58,31 @@ class _HomePageState extends State<HomePage> {
                           ),
                           IconButton(
                             onPressed: (){},
-                           icon: Icon(Icons.image_search),
+                           icon: const Icon(Icons.image_search),
                             color: Colors.white,
                           ),
                         ],
                       ),
                     ),
+                    SizedBox(height: 8,),
                     Expanded(
                       child: ListView.builder(
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
                             return Container(
-                              margin: EdgeInsets.only(
+                              margin: const EdgeInsets.only(
                                 bottom: 12,
                                 left: 16,
                                 right: 16,
                               ),
-                              padding: EdgeInsets.all(
+                              padding: const EdgeInsets.all(
                                 16,
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(
                                   16,
                                 ),
-                                color: Colors.amber.withOpacity(0.1),
+                                // color: Colors.amber.withOpacity(0.1),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,12 +97,12 @@ class _HomePageState extends State<HomePage> {
                                             ? Colors.amber
                                             : Colors.purple.shade200),
                                   ),
-                                  SizedBox(
+                                  const SizedBox(
                                     height: 12,
                                   ),
                                   Text(
                                     messages[index].parts.first.text,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       height: 1.2,
                                     ),
                                   ),
@@ -109,16 +113,18 @@ class _HomePageState extends State<HomePage> {
                     ),
                     if (chatBloc.generating)
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Container(
                               height: 100,
                               width: 100,
                               child:
                                   Lottie.asset("assets/lottie/loading.json")),
-                          SizedBox(
+                          const SizedBox(
                             width: 20,
                           ),
-                          Text("Loading..."),
+                          const Text("Loading..."),
                         ],
                       ),
                     Container(
@@ -157,6 +163,13 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
+                          IconButton(
+                            icon: const Icon(Icons.mic),
+                            onPressed: () {
+                              _startListening();
+                            },
+                            color: Colors.white,
+                          ),
                           const SizedBox(
                             width: 12,
                           ),
@@ -185,7 +198,8 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
-                          )
+                          ),
+
                         ],
                       ),
                     ),
@@ -194,10 +208,35 @@ class _HomePageState extends State<HomePage> {
               );
 
             default:
-              return SizedBox();
+              return const SizedBox();
           }
         },
       ),
     );
+  }
+  void _startListening() async {
+    bool available = await _speech.initialize(
+      onStatus: (status) {
+        print('Speech recognition status: $status');
+      },
+      onError: (error) {
+        print('Speech recognition error: $error');
+      },
+    );
+
+    if (available) {
+      _speech.listen(
+        onResult: (result) {
+          if (result.finalResult) {
+            // Update the text field with the recognized speech
+            setState(() {
+              textEditingController.text = result.recognizedWords;
+            });
+          }
+        },
+      );
+    } else {
+      print("Speech recognition not available");
+    }
   }
 }
